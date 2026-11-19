@@ -17,6 +17,10 @@ export default defineConfig({
     outDir: 'dist',
     emptyOutDir: true,
     target: 'es2021',
+    // Vite leaves ES-format libraries unminified; the card is an end product, so minify fully.
+    rolldownOptions: {
+      output: { minify: true },
+    },
   },
   server: {
     open: '/dev/',

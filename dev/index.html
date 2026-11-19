@@ -88,7 +88,18 @@
           <option value="520">520 px</option>
         </select>
       </label>
-      <label><input type="checkbox" id="sign" /> show_sign</label>
+      <label><input type="checkbox" id="sign" checked /> show_sign</label>
+    </div>
+    <h2>Reference vs card (demo: day_charge, theme: deye)</h2>
+    <div class="grid" id="compare">
+      <figure>
+        <figcaption>Deye Cloud recording (dev/reference/deye-cloud.jpg, not in git)</figcaption>
+        <img src="./reference/deye-cloud.jpg" alt="" style="width: 100%; border-radius: 12px" onerror="this.closest('figure').remove()" />
+      </figure>
+      <figure>
+        <figcaption>Recording: Load panel open</figcaption>
+        <img src="./reference/deye-cloud-panel.jpg" alt="" style="width: 100%; border-radius: 12px" onerror="this.closest('figure').remove()" />
+      </figure>
     </div>
     <h2>Live — simulated ha-solarman entities (<code>preset: solarman</code>)</h2>
     <div class="grid" id="live"></div>

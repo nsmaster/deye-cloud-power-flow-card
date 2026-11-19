@@ -20,6 +20,10 @@ export const STRINGS = {
     on: 'On grid',
     off: 'Off grid',
   },
+  panel: {
+    details: 'details',
+    close: 'Close',
+  },
   header: {
     productionToday: 'Production Today',
     updated: 'Updated',

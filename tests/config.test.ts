@@ -17,9 +17,14 @@ describe('validateConfig', () => {
     expect(() => validateConfig(manual)).not.toThrow();
   });
 
-  it('names the missing required key', () => {
-    const config = { ...manual, battery: { power: 'sensor.bat' } };
-    expect(() => validateConfig(config)).toThrow('Missing required entity "battery.soc"');
+  it('requires no particular entity', () => {
+    expect(() => validateConfig({ ...manual, battery: { power: 'sensor.bat' } })).not.toThrow();
+    expect(() => validateConfig({ type: TYPE, pv: { pv1_power: 'sensor.pv1' } })).not.toThrow();
+  });
+
+  it('rejects a config without a single entity', () => {
+    expect(() => validateConfig({ type: TYPE })).toThrow('No entities configured');
+    expect(() => validateConfig({ type: TYPE, preset: 'solarman', pv: { name: 'Roof' } })).not.toThrow();
   });
 
   it('accepts the Solarman preset on its own', () => {
@@ -34,9 +39,10 @@ describe('validateConfig', () => {
   it('rejects malformed entity ids and options', () => {
     expect(() => validateConfig({ ...manual, pv: { power: 'pv power' } })).toThrow('"pv.power" must be an entity id');
     expect(() => validateConfig({ ...manual, min_flow_w: -1 })).toThrow('"min_flow_w"');
-    expect(() => validateConfig({ ...manual, max_power_w: 5 })).toThrow('"max_power_w"');
     expect(() => validateConfig({ ...manual, preset: 'sunsynk' })).toThrow('"preset"');
     expect(() => validateConfig(null)).toThrow('Invalid configuration');
+    expect(() => validateConfig({ ...manual, pv: { ...manual.pv, icon: 'solar' } })).toThrow('"pv.icon"');
+    expect(() => validateConfig({ ...manual, pv: { ...manual.pv, icon: 'mdi:solar-power' } })).not.toThrow();
   });
 });
 
@@ -69,7 +75,8 @@ describe('resolveEntities', () => {
 describe('resolveOptions', () => {
   it('applies defaults and per-node overrides', () => {
     const o = resolveOptions({ ...manual, load: { hidden: true }, battery: { ...manual.battery, invert: true } }, STRINGS.nodes);
-    expect(o.minFlowW).toBe(10);
+    expect(o.minFlowW).toBe(50);
+    expect(o.showSign).toBe(true);
     expect(o.noGridVoltage).toBe(100);
     expect(o.hidden.load).toBe(true);
     expect(o.invert.battery).toBe(true);

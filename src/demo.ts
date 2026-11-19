@@ -4,6 +4,8 @@ import type { PowerFlowData } from './model';
 export interface DemoScenario {
   label: string;
   data: PowerFlowData;
+  /** Extra values for detail panels, keyed "node.key": [state, unit]. */
+  details?: Record<string, readonly [number | string, string?]>;
 }
 
 const at = (hours: number, minutes: number): Date => {
@@ -27,6 +29,31 @@ export const DEMO_SCENARIOS = {
       productionToday: 1.2,
       lastUpdated: at(12, 10),
       stale: false,
+    },
+    details: {
+      'pv.pv1_power': [521, 'W'],
+      'pv.pv2_power': [427, 'W'],
+      'pv.pv1_voltage': [312.4, 'V'],
+      'pv.pv2_voltage': [298.7, 'V'],
+      'pv.pv1_current': [1.67, 'A'],
+      'pv.pv2_current': [1.43, 'A'],
+      'grid.status': ['on'],
+      'grid.frequency': [50.01, 'Hz'],
+      'grid.voltage': [232.9, 'V'],
+      'grid.import_today': [3.42, 'kWh'],
+      'grid.import_total': [6120.5, 'kWh'],
+      'grid.export_today': [0, 'kWh'],
+      'grid.export_total': [41.3, 'kWh'],
+      'inverter.voltage': [232.6, 'V'],
+      'inverter.power': [559, 'W'],
+      'inverter.frequency': [50.0, 'Hz'],
+      'battery.status': ['charging'],
+      'battery.voltage': [53.2, 'V'],
+      'battery.current': [-7.31, 'A'],
+      'battery.temperature': [21.4, '°C'],
+      'ups.voltage': [232.6, 'V'],
+      'load.energy_today': [5.1, 'kWh'],
+      'load.energy_total': [23280, 'kWh'],
     },
   },
   night_discharge: {
@@ -112,4 +139,9 @@ export const DEFAULT_DEMO: DemoScenarioId = 'day_charge';
 
 export function isDemoScenario(id: string): id is DemoScenarioId {
   return Object.prototype.hasOwnProperty.call(DEMO_SCENARIOS, id);
+}
+
+export function demoDetail(id: DemoScenarioId, key: string): readonly [number | string, string?] | undefined {
+  const scenario: DemoScenario = DEMO_SCENARIOS[id];
+  return scenario.details?.[key];
 }

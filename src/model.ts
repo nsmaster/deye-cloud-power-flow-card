@@ -8,6 +8,9 @@ import type { HassEntity, HomeAssistant } from './types';
  */
 export interface PowerFlowData {
   pv: number | null;
+  /** PV string powers (entity or voltage × current); used by the Production panel. */
+  pv1?: number | null;
+  pv2?: number | null;
   grid: number | null;
   battery: number | null;
   soc: number | null;
@@ -37,12 +40,6 @@ export function socLevel(soc: number | null, warning: number, critical: number):
   return 'ok';
 }
 
-/** Number of filled bars (0–5) in the battery icon. */
-export function socBars(soc: number | null): number {
-  if (soc === null || !Number.isFinite(soc)) return 0;
-  const clamped = Math.min(100, Math.max(0, soc));
-  return Math.ceil(clamped / 20);
-}
 
 // ---------------------------------------------------------------------------
 // Reading Home Assistant entities
@@ -96,6 +93,8 @@ export interface ReadOptions {
 /** Entities whose `last_updated` decides the header time and staleness. */
 const CORE: readonly (readonly [NodeId, string])[] = [
   ['pv', 'power'],
+  ['pv', 'pv1_power'],
+  ['pv', 'pv2_power'],
   ['grid', 'power'],
   ['battery', 'power'],
   ['battery', 'soc'],
@@ -112,12 +111,22 @@ export function readData(hass: HomeAssistant, entities: EntityMap, options: Read
     return id ? hass.states[id] : undefined;
   };
   const power = (node: NodeId, key = 'power') => entityNumber(get(node, key), 'power', options.invert[node]);
+  const plain = (node: NodeId, key: string, invert = false) => entityNumber(get(node, key), 'plain', invert);
+  const product = (a: number | null, b: number | null) => (a !== null && b !== null ? a * b : null);
+
+  // Computed when there is no entity: string power = V × I, PV = PV1 + PV2, battery = V × I.
+  const pv1 = power('pv', 'pv1_power') ?? product(plain('pv', 'pv1_voltage'), plain('pv', 'pv1_current'));
+  const pv2 = power('pv', 'pv2_power') ?? product(plain('pv', 'pv2_voltage'), plain('pv', 'pv2_current'));
+  const pv = power('pv') ?? (pv1 === null && pv2 === null ? null : (pv1 ?? 0) + (pv2 ?? 0));
+  const battery =
+    power('battery') ?? product(plain('battery', 'voltage'), plain('battery', 'current', options.invert.battery));
 
   const grid = power('grid');
   const inverterGridPort = entityNumber(get('grid', 'inner_power'), 'power', options.invert.grid);
   const explicitLoad = power('load');
   // Grid-side load = what the CT sees minus what goes through the inverter's grid port.
-  const load = explicitLoad ?? (grid !== null && inverterGridPort !== null ? grid - inverterGridPort : null);
+  // Clamped at 0: measurement noise of two sensors must not show as a negative load.
+  const load = explicitLoad ?? (grid !== null && inverterGridPort !== null ? Math.max(0, grid - inverterGridPort) : null);
 
   let newest: number | null = null;
   let newestAny: number | null = null;
@@ -132,9 +141,11 @@ export function readData(hass: HomeAssistant, entities: EntityMap, options: Read
   const updated = newest ?? newestAny;
 
   return {
-    pv: power('pv'),
+    pv,
+    pv1,
+    pv2,
     grid,
-    battery: power('battery'),
+    battery,
     soc: entityNumber(get('battery', 'soc')),
     ups: power('ups'),
     load,
@@ -142,6 +153,29 @@ export function readData(hass: HomeAssistant, entities: EntityMap, options: Read
     productionToday: entityNumber(get('pv', 'energy_today'), 'energy'),
     lastUpdated: updated === null ? null : new Date(updated),
     stale: newest === null || now - newest > options.staleAfterS * 1000,
+  };
+}
+
+/** Which nodes have data: configured directly or computable from configured entities. */
+export interface Presence {
+  pv: boolean;
+  grid: boolean;
+  battery: boolean;
+  soc: boolean;
+  ups: boolean;
+  load: boolean;
+}
+
+export function presence(entities: EntityMap): Presence {
+  const has = (node: NodeId, key: string) => entityId(entities, node, key) !== undefined;
+  const pvString = (n: number) => has('pv', `pv${n}_power`) || (has('pv', `pv${n}_voltage`) && has('pv', `pv${n}_current`));
+  return {
+    pv: has('pv', 'power') || pvString(1) || pvString(2),
+    grid: has('grid', 'power'),
+    battery: has('battery', 'power') || has('battery', 'soc') || (has('battery', 'voltage') && has('battery', 'current')),
+    soc: has('battery', 'soc'),
+    ups: has('ups', 'power'),
+    load: has('load', 'power') || (has('grid', 'power') && has('grid', 'inner_power')),
   };
 }
 

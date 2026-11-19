@@ -51,13 +51,13 @@ function isNumber(value: number | null | undefined): value is number {
   return typeof value === 'number' && Number.isFinite(value);
 }
 
-/** < 1000 W as whole watts ("948 W"), otherwise kW with two decimals ("1.25 kW"). */
-export function formatPower(watts: number | null, locale?: HaLocale, showSign = false): FormattedValue {
+/** Two decimals like the app: "948.00 W", from 1000 W in kW ("1.25 kW"). */
+export function formatPower(watts: number | null, locale?: HaLocale, showSign = true): FormattedValue {
   if (!isNumber(watts)) return EMPTY;
   const value = showSign ? watts : Math.abs(watts);
-  const rounded = Math.round(value);
+  const rounded = Math.round(value * 100) / 100;
   if (Math.abs(rounded) < 1000) {
-    return { value: formatNumber(rounded, 0, locale), unit: 'W' };
+    return { value: formatNumber(rounded, 2, locale), unit: 'W' };
   }
   return { value: formatNumber(value / 1000, 2, locale), unit: 'kW' };
 }
@@ -74,6 +74,16 @@ export function formatEnergy(kwh: number | null, locale?: HaLocale): FormattedVa
 export function formatPercent(percent: number | null, locale?: HaLocale): FormattedValue {
   if (!isNumber(percent)) return EMPTY;
   return { value: formatNumber(Math.round(percent), 0, locale), unit: '%' };
+}
+
+/** Date and time as in the app header: "2026-11-19 11:29:02" (local time). */
+export function formatDateTime(date: Date | null): string {
+  if (!date || Number.isNaN(date.getTime())) return DASH;
+  const p = (n: number) => String(n).padStart(2, '0');
+  return (
+    `${date.getFullYear()}-${p(date.getMonth() + 1)}-${p(date.getDate())} ` +
+    `${p(date.getHours())}:${p(date.getMinutes())}:${p(date.getSeconds())}`
+  );
 }
 
 export function formatTime(date: Date | null, locale?: HaLocale): string {

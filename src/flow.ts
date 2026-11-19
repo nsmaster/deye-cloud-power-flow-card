@@ -8,22 +8,11 @@ export type FlowDirection = 'in' | 'out' | 'none';
  */
 export type LineKind = 'source' | 'sink' | 'bidirectional';
 
-export interface FlowOptions {
-  minFlowW: number;
-  maxPowerW: number;
-}
+/** One dot cycle, the same on every line (measured from the app: ~3 s). */
+export const FLOW_CYCLE_S = 3;
 
-export interface LineFlow {
-  direction: FlowDirection;
-  /** Seconds for a dot to travel the whole line; null when the line is idle. */
-  durationS: number | null;
-}
-
-export const SLOWEST_S = 4;
-export const FASTEST_S = 1;
-
-export function flowDirection(powerW: number | null, kind: LineKind, minFlowW: number): FlowDirection {
-  if (powerW === null || !Number.isFinite(powerW) || Math.abs(powerW) <= minFlowW) return 'none';
+export function flowDirection(powerW: number | null, kind: LineKind, minFlowW: number, enabled = true): FlowDirection {
+  if (!enabled || powerW === null || !Number.isFinite(powerW) || Math.abs(powerW) <= minFlowW) return 'none';
   switch (kind) {
     case 'source':
       return powerW > 0 ? 'in' : 'none';
@@ -32,18 +21,4 @@ export function flowDirection(powerW: number | null, kind: LineKind, minFlowW: n
     case 'bidirectional':
       return powerW > 0 ? 'in' : 'out';
   }
-}
-
-/** Linear from SLOWEST_S at the threshold to FASTEST_S at max power. */
-export function flowDuration(powerW: number, { minFlowW, maxPowerW }: FlowOptions): number {
-  const range = maxPowerW - minFlowW;
-  const t = range > 0 ? (Math.abs(powerW) - minFlowW) / range : 1;
-  const clamped = Math.min(1, Math.max(0, t));
-  return SLOWEST_S - (SLOWEST_S - FASTEST_S) * clamped;
-}
-
-export function lineFlow(powerW: number | null, kind: LineKind, options: FlowOptions, enabled = true): LineFlow {
-  const direction = enabled ? flowDirection(powerW, kind, options.minFlowW) : 'none';
-  if (direction === 'none' || powerW === null) return { direction: 'none', durationS: null };
-  return { direction, durationS: flowDuration(powerW, options) };
 }

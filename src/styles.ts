@@ -1,19 +1,21 @@
 import { css } from 'lit';
 
+const NUMBER_FONT = css`'DIN Alternate', 'DIN Condensed', Bahnschrift, 'Roboto Condensed', 'Arial Narrow', sans-serif`;
+
 export const cardStyles = css`
   :host {
     display: block;
     /* Default mode follows the active Home Assistant theme. */
+    --dcf-bg: var(--ha-card-background, var(--card-background-color, #ffffff));
     --dcf-text: var(--primary-text-color, #212121);
     --dcf-text-secondary: var(--secondary-text-color, #727272);
-    --dcf-node-bg: color-mix(in srgb, var(--dcf-text) 4%, transparent);
-    --dcf-node-border: color-mix(in srgb, var(--dcf-text) 22%, transparent);
+    --dcf-node-bg: color-mix(in srgb, var(--dcf-text) 5%, transparent);
+    --dcf-node-border: color-mix(in srgb, var(--dcf-text) 38%, transparent);
     --dcf-icon: var(--dcf-text);
-    --dcf-line: color-mix(in srgb, var(--dcf-text) 32%, transparent);
-    --dcf-arrow: color-mix(in srgb, var(--dcf-text) 55%, transparent);
-    --dcf-accent: var(--primary-color, #03a9f4);
-    --dcf-glow: color-mix(in srgb, var(--dcf-accent) 50%, transparent);
-    --dcf-ok: var(--success-color, #3ccf6e);
+    --dcf-line: var(--dcf-text);
+    --dcf-accent: var(--primary-color, #3991ff);
+    --dcf-glow: color-mix(in srgb, var(--dcf-accent) 45%, transparent);
+    --dcf-ok: var(--success-color, #43c35e);
     --dcf-warning: var(--warning-color, #f5b83d);
     --dcf-error: var(--error-color, #f05454);
   }
@@ -21,78 +23,78 @@ export const cardStyles = css`
   ha-card {
     display: block;
     overflow: hidden;
-    padding: 14px 12px 10px;
+    padding: 16px 14px 12px;
     color: var(--dcf-text);
   }
 
-  /* theme: deye — fixed dark palette of the Deye Cloud app. */
+  /* theme: deye — colours sampled from the Deye Cloud app. */
   ha-card.deye {
+    --dcf-bg: #2c2c2c;
     --dcf-text: #ffffff;
-    --dcf-text-secondary: #8a9099;
-    --dcf-node-bg: #22252b;
-    --dcf-node-border: #3a3f47;
-    --dcf-icon: #e8eaed;
-    --dcf-line: #4a505a;
-    --dcf-arrow: #6b727d;
-    --dcf-accent: #2f7cf6;
-    --dcf-glow: rgba(47, 124, 246, 0.5);
-    --dcf-ok: #3ccf6e;
+    --dcf-text-secondary: #8c8c8c;
+    --dcf-node-bg: #333333;
+    --dcf-node-border: #6d6e71;
+    --dcf-icon: #ffffff;
+    --dcf-line: #ffffff;
+    --dcf-accent: #3991ff;
+    --dcf-glow: rgba(59, 146, 252, 0.45);
+    --dcf-ok: #43c35e;
+    --dcf-ok-text: #5bcb7a;
     --dcf-warning: #f5b83d;
     --dcf-error: #f05454;
-    background: #17191d;
-    color: var(--dcf-text);
+    background: var(--dcf-bg);
   }
 
   /* Header */
   .header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 0 4px 4px;
+    padding: 0 2px 6px;
   }
   .title {
-    font-size: 16px;
+    font-size: 17px;
     font-weight: 600;
-    line-height: 22px;
+    line-height: 24px;
+    margin-bottom: 6px;
+  }
+  .production-label {
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 20px;
   }
   .production {
-    display: flex;
-    flex-direction: column;
-  }
-  .production .label {
-    font-size: 12px;
-    line-height: 16px;
-    color: var(--dcf-text-secondary);
-  }
-  .production .number {
-    font-size: 20px;
-    font-weight: 600;
+    font-family: ${NUMBER_FONT};
+    font-size: 21px;
+    font-weight: 700;
     line-height: 26px;
   }
-  .production .unit,
+  .production .unit {
+    font-size: 11px;
+    margin-left: 1px;
+  }
   .updated {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 4px;
     font-size: 12px;
     color: var(--dcf-text-secondary);
-  }
-  .production .unit {
-    margin-left: 3px;
-    font-weight: 400;
-  }
-  .updated {
-    white-space: nowrap;
-    line-height: 22px;
   }
   .updated.stale {
     color: var(--dcf-warning);
   }
+  .clock {
+    flex: none;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+  }
 
   /* Diagram */
-  svg {
+  svg.diagram {
     display: block;
     width: 100%;
     height: auto;
-    max-height: 480px;
+    max-height: 520px;
     overflow: visible;
   }
   text {
@@ -100,58 +102,68 @@ export const cardStyles = css`
     font-family: inherit;
   }
   .value {
-    font-size: 20px;
-    font-weight: 600;
+    font-family: ${NUMBER_FONT};
+    font-size: 17.5px;
+    font-weight: 700;
     fill: var(--dcf-text);
   }
-  .unit {
-    font-size: 12px;
-    font-weight: 400;
+  .value .unit {
+    font-size: 9px;
+    font-weight: 600;
   }
   .caption {
-    font-size: 12px;
+    font-size: 10.5px;
     fill: var(--dcf-text-secondary);
   }
 
   .box {
     fill: var(--dcf-node-bg);
     stroke: var(--dcf-node-border);
-    stroke-width: 1.5;
   }
   .node.highlight .box {
     stroke: var(--dcf-accent);
-    stroke-width: 2;
-    filter: drop-shadow(0 0 6px var(--dcf-glow));
+    filter: drop-shadow(0 0 3px var(--dcf-glow));
   }
   .icon {
     fill: none;
     stroke: var(--dcf-icon);
-    stroke-width: 1.5;
-    stroke-linecap: round;
-    stroke-linejoin: round;
+    stroke-width: 1.65;
+    stroke-linecap: butt;
+    stroke-linejoin: miter;
+  }
+  .icon .solid {
+    fill: var(--dcf-icon);
+    stroke: none;
   }
   .icon .terminal {
-    stroke-width: 2.5;
+    stroke-width: 2.6;
   }
-  .icon .bar {
+  .icon-text {
+    fill: var(--dcf-icon);
     stroke: none;
-    fill: none;
+    font-family: ${NUMBER_FONT};
+    font-size: 8px;
+    font-weight: 700;
   }
-  .icon .bar.on {
-    fill: var(--dcf-soc, var(--dcf-accent));
+  .ha-icon ha-icon {
+    display: block;
+    --mdc-icon-size: 26px;
+    color: var(--dcf-icon);
   }
   .dim {
     opacity: 0.4;
   }
 
+  /* Battery: SOC text and fill inside the node */
   .soc {
-    text-anchor: start;
-    font-size: 15px;
-    font-weight: 600;
-    fill: var(--dcf-soc, var(--dcf-accent));
+    font-family: ${NUMBER_FONT};
+    font-size: 13px;
+    font-weight: 700;
+    fill: var(--dcf-soc);
   }
-  .soc .unit {
-    font-size: 11px;
+  .icon .soc-fill {
+    fill: var(--dcf-soc);
+    stroke: none;
   }
   .battery.level-ok,
   .battery.level-unknown {
@@ -167,15 +179,23 @@ export const cardStyles = css`
     fill: var(--dcf-text-secondary);
   }
 
+  /* "On grid" sits on the grid node's top border, masking it like in the app */
   .grid-status {
-    font-size: 12px;
+    font-size: 9.5px;
     font-weight: 500;
   }
-  .grid-status.on,
+  .grid-status-bg {
+    fill: var(--dcf-bg);
+  }
+  .grid-status.on {
+    fill: var(--dcf-ok-text, var(--dcf-ok));
+  }
+  .grid-status.off {
+    fill: var(--dcf-error);
+  }
   .badge.on circle {
     fill: var(--dcf-ok);
   }
-  .grid-status.off,
   .badge.off circle {
     fill: var(--dcf-error);
   }
@@ -187,39 +207,96 @@ export const cardStyles = css`
     stroke-linejoin: round;
   }
 
-  /* Lines and flow dots */
+  /* Lines, arrows and flow dots */
   .track {
     fill: none;
     stroke: var(--dcf-line);
-    stroke-width: 1.5;
-  }
-  .line.idle .track {
-    opacity: 0.45;
+    stroke-width: 1px;
   }
   .arrow {
-    fill: none;
-    stroke: var(--dcf-arrow);
-    stroke-width: 1.5;
-    stroke-linecap: round;
-    stroke-linejoin: round;
+    fill: var(--dcf-line);
   }
-  .dots {
+  .dot {
     fill: none;
     stroke: var(--dcf-accent);
-    stroke-width: 6;
+    stroke-width: 8px;
     stroke-linecap: round;
-    animation: dcf-flow var(--dur) linear infinite;
+    animation: dcf-flow 3s linear infinite;
   }
+  .line.idle .dot {
+    visibility: hidden;
+  }
+  /* Measured from the app: the dot fades in at the line start, travels at constant
+     speed, fades out just before the arrow, then the line stays empty briefly. */
   @keyframes dcf-flow {
-    from {
+    0% {
       stroke-dashoffset: 0;
+      opacity: 0;
     }
-    to {
-      stroke-dashoffset: calc(var(--len) * -1px);
+    7% {
+      opacity: 1;
+    }
+    82% {
+      opacity: 1;
+    }
+    89% {
+      stroke-dashoffset: calc(var(--travel) * -1px);
+      opacity: 0;
+    }
+    100% {
+      stroke-dashoffset: calc(var(--travel) * -1px);
+      opacity: 0;
     }
   }
+  /* Clickable nodes */
+  .hit {
+    fill: transparent;
+    stroke: none;
+  }
+  .node.clickable,
+  .row.link,
+  .close {
+    cursor: pointer;
+    outline: none;
+  }
+  /* Keyboard focus only; the app does not highlight the tapped node. */
+  .node.clickable:focus-visible .box {
+    stroke: var(--dcf-accent);
+  }
+
+  /* Detail panel (app: translucent black, "Label: value" rows, × at the bottom) */
+  .panel-bg {
+    fill: rgba(0, 0, 0, 0.55);
+  }
+  ha-card:not(.deye) .panel-bg {
+    fill: color-mix(in srgb, var(--dcf-bg) 25%, rgba(0, 0, 0, 0.72));
+  }
+  .panel-text {
+    text-anchor: start;
+    font-size: 12px;
+    fill: #ffffff;
+  }
+  .row.link:hover .panel-text,
+  .row.link:focus-visible .panel-text {
+    fill: var(--dcf-accent);
+  }
+  .row.link:focus-visible .hit {
+    fill: rgba(255, 255, 255, 0.06);
+  }
+  .close path {
+    fill: none;
+    stroke: #d7d7d7;
+    stroke-width: 1;
+    stroke-linecap: round;
+  }
+  .close:focus-visible path,
+  .close:hover path {
+    stroke: #ffffff;
+    stroke-width: 1.4;
+  }
+
   @media (prefers-reduced-motion: reduce) {
-    .dots {
+    .dot {
       display: none;
     }
   }

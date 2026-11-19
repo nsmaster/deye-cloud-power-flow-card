@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { EntityMap } from '../src/config';
-import { batteryState, entityNumber, gridOnline, readData, socBars, socLevel } from '../src/model';
+import { batteryState, entityNumber, gridOnline, presence, readData, socLevel } from '../src/model';
 import type { HomeAssistant } from '../src/types';
 
 describe('batteryState', () => {
@@ -22,17 +22,6 @@ describe('socLevel', () => {
   });
 });
 
-describe('socBars', () => {
-  it('fills the icon in five steps', () => {
-    expect(socBars(0)).toBe(0);
-    expect(socBars(1)).toBe(1);
-    expect(socBars(20)).toBe(1);
-    expect(socBars(21)).toBe(2);
-    expect(socBars(96)).toBe(5);
-    expect(socBars(150)).toBe(5);
-    expect(socBars(null)).toBe(0);
-  });
-});
 
 describe('entityNumber', () => {
   const entity = (state: string, unit?: string) => ({
@@ -123,6 +112,37 @@ describe('readData', () => {
     expect(readData(hass(), entities, options, now).load).toBe(56);
   });
 
+  it('sums PV strings when there is no total PV entity', () => {
+    const strings = { ...entities, pv: { pv1_power: 'sensor.pv1', pv2_power: 'sensor.pv2' } };
+    const data = readData(hass({ 'sensor.pv1': state('521'), 'sensor.pv2': state('0.427', 'kW') }), strings, options, now);
+    expect(data.pv).toBe(948);
+    expect(data.pv1).toBe(521);
+  });
+
+  it('uses a single string as PV power', () => {
+    const one = { ...entities, pv: { pv1_power: 'sensor.pv1' } };
+    expect(readData(hass({ 'sensor.pv1': state('521') }), one, options, now).pv).toBe(521);
+  });
+
+  it('computes string power from voltage × current', () => {
+    const vi = { ...entities, pv: { pv1_voltage: 'sensor.v1', pv1_current: 'sensor.i1' } };
+    const data = readData(hass({ 'sensor.v1': state('300', 'V'), 'sensor.i1': state('2', 'A') }), vi, options, now);
+    expect(data.pv1).toBe(600);
+    expect(data.pv).toBe(600);
+  });
+
+  it('computes battery power from voltage × current, honouring invert', () => {
+    const vi = { ...entities, battery: { voltage: 'sensor.bv', current: 'sensor.bi', soc: 'sensor.soc' } };
+    const states = { 'sensor.bv': state('53', 'V'), 'sensor.bi': state('-7', 'A') };
+    expect(readData(hass(states), vi, options, now).battery).toBe(-371);
+    const inverted = { ...options, invert: { ...options.invert, battery: true } };
+    expect(readData(hass(states), vi, inverted, now).battery).toBe(371);
+  });
+
+  it('never reports a negative computed load', () => {
+    expect(readData(hass({ 'sensor.port': state('25') }), entities, options, now).load).toBe(0);
+  });
+
   it('prefers an explicit load entity', () => {
     const withLoad = { ...entities, load: { power: 'sensor.load' } };
     expect(readData(hass({ 'sensor.load': state('60') }), withLoad, options, now).load).toBe(60);
@@ -150,5 +170,31 @@ describe('readData', () => {
     const data = readData(hass(states), entities, options, now);
     expect(data).toMatchObject({ pv: null, grid: null, battery: null, soc: null, ups: null, load: null, gridOnline: null });
     expect(data.stale).toBe(true);
+  });
+});
+
+describe('presence', () => {
+  it('marks nodes without configured or computable values as absent', () => {
+    expect(presence({ pv: { pv1_power: 'sensor.pv1' }, grid: { power: 'sensor.ct' } })).toEqual({
+      pv: true,
+      grid: true,
+      battery: false,
+      soc: false,
+      ups: false,
+      load: false,
+    });
+  });
+
+  it('counts computable values as present', () => {
+    const p = presence({
+      pv: { pv2_voltage: 'sensor.v', pv2_current: 'sensor.i' },
+      grid: { power: 'sensor.ct', inner_power: 'sensor.port' },
+      battery: { voltage: 'sensor.bv', current: 'sensor.bi' },
+    });
+    expect(p).toMatchObject({ pv: true, battery: true, soc: false, load: true });
+  });
+
+  it('does not count a lone string voltage as PV', () => {
+    expect(presence({ pv: { pv1_voltage: 'sensor.v' } }).pv).toBe(false);
   });
 });

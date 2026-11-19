@@ -41,15 +41,6 @@ export type EntityKey<N extends NodeId> = (typeof ENTITY_KEYS)[N][number];
 /** Resolved entity ids per node and key. */
 export type EntityMap = { [N in NodeId]?: Partial<Record<EntityKey<N>, string>> };
 
-/** Without these the card shows an error (unless the node is hidden or demo is on). */
-export const REQUIRED_ENTITIES: readonly (readonly [NodeId, string])[] = [
-  ['pv', 'power'],
-  ['grid', 'power'],
-  ['battery', 'power'],
-  ['battery', 'soc'],
-  ['ups', 'power'],
-];
-
 /** Per-node section: entity ids under ENTITY_KEYS plus display options. */
 export interface NodeConfig {
   name?: string;
@@ -76,7 +67,6 @@ export interface CardConfig {
   preset?: 'solarman' | 'none';
   prefix?: string;
   min_flow_w?: number;
-  max_power_w?: number;
   stale_after_s?: number;
   show_sign?: boolean;
   /** Render built-in sample data instead of entities (preview, screenshots). */
@@ -93,7 +83,6 @@ export interface ResolvedOptions {
   title?: string;
   theme: ThemeMode;
   minFlowW: number;
-  maxPowerW: number;
   staleAfterS: number;
   showSign: boolean;
   socWarning: number;
@@ -102,12 +91,13 @@ export interface ResolvedOptions {
   names: Record<NodeId, string>;
   hidden: Record<NodeId, boolean>;
   invert: Record<NodeId, boolean>;
+  /** Optional mdi icon replacing the built-in line icon. */
+  icons: Partial<Record<NodeId, string>>;
   entities: EntityMap;
 }
 
 export const DEFAULTS = {
-  minFlowW: 10,
-  maxPowerW: 6000,
+  minFlowW: 50,
   staleAfterS: 300,
   socWarning: 50,
   socCritical: 20,
@@ -130,7 +120,7 @@ export function validateConfig(config: unknown): CardConfig {
   if (!isRecord(config)) {
     throw new Error('Invalid configuration');
   }
-  for (const key of ['min_flow_w', 'max_power_w', 'stale_after_s']) {
+  for (const key of ['min_flow_w', 'stale_after_s']) {
     checkNumber(config, key);
   }
   if (config.theme !== undefined && config.theme !== 'ha' && config.theme !== 'deye') {
@@ -159,6 +149,12 @@ export function validateConfig(config: unknown): CardConfig {
       }
     }
   }
+  for (const id of NODE_IDS) {
+    const icon = (config[id] as Record<string, unknown> | undefined)?.icon;
+    if (icon !== undefined && (typeof icon !== 'string' || !/^[a-z0-9-]+:[a-z0-9-]+$/.test(icon))) {
+      throw new Error(`"${id}.icon" must be an icon like "mdi:solar-power"`);
+    }
+  }
   if (isRecord(config.battery)) {
     checkNumber(config.battery, 'soc_warning', 'battery.soc_warning');
     checkNumber(config.battery, 'soc_critical', 'battery.soc_critical');
@@ -166,20 +162,13 @@ export function validateConfig(config: unknown): CardConfig {
   if (isRecord(config.grid)) {
     checkNumber(config.grid, 'no_grid_voltage', 'grid.no_grid_voltage');
   }
-  const min = (config.min_flow_w as number | undefined) ?? DEFAULTS.minFlowW;
-  const max = (config.max_power_w as number | undefined) ?? DEFAULTS.maxPowerW;
-  if (max <= min) {
-    throw new Error('"max_power_w" must be greater than "min_flow_w"');
-  }
   const valid = config as unknown as CardConfig;
+  // Nothing is required: unset values are hidden or computed. Only a config
+  // without a single entity is an error, since the card would be empty.
   if (valid.demo === undefined) {
     const entities = resolveEntities(valid);
-    for (const [node, key] of REQUIRED_ENTITIES) {
-      if (valid[node]?.hidden === true) continue;
-      if (!(entities[node] as Record<string, string> | undefined)?.[key]) {
-        const hint = valid.preset === 'solarman' ? '' : ' (or use "preset: solarman")';
-        throw new Error(`Missing required entity "${node}.${key}"${hint}`);
-      }
+    if (!Object.values(entities).some((keys) => Object.keys(keys ?? {}).length > 0)) {
+      throw new Error('No entities configured: set at least one entity or use "preset: solarman"');
     }
   }
   return valid;
@@ -208,7 +197,10 @@ export function resolveOptions(config: CardConfig, defaultNames: Record<NodeId, 
   const names = {} as Record<NodeId, string>;
   const hidden = {} as Record<NodeId, boolean>;
   const invert = {} as Record<NodeId, boolean>;
+  const icons: Partial<Record<NodeId, string>> = {};
   for (const id of NODE_IDS) {
+    const icon = config[id]?.icon;
+    if (icon) icons[id] = icon;
     names[id] = config[id]?.name ?? defaultNames[id];
     hidden[id] = id !== 'inverter' && config[id]?.hidden === true;
     invert[id] = config[id]?.invert === true;
@@ -217,15 +209,15 @@ export function resolveOptions(config: CardConfig, defaultNames: Record<NodeId, 
     title: config.title,
     theme: config.theme ?? 'ha',
     minFlowW: config.min_flow_w ?? DEFAULTS.minFlowW,
-    maxPowerW: config.max_power_w ?? DEFAULTS.maxPowerW,
     staleAfterS: config.stale_after_s ?? DEFAULTS.staleAfterS,
-    showSign: config.show_sign === true,
+    showSign: config.show_sign !== false,
     socWarning: config.battery?.soc_warning ?? DEFAULTS.socWarning,
     socCritical: config.battery?.soc_critical ?? DEFAULTS.socCritical,
     noGridVoltage: config.grid?.no_grid_voltage ?? DEFAULTS.noGridVoltage,
     names,
     hidden,
     invert,
+    icons,
     entities: resolveEntities(config),
   };
 }

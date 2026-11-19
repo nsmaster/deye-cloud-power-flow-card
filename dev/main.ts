@@ -20,6 +20,17 @@ class FakeHaCard extends HTMLElement {
 }
 if (!customElements.get('ha-card')) customElements.define('ha-card', FakeHaCard);
 
+/** Stand-in for ha-icon: a circle with the icon name's first letter. */
+class FakeHaIcon extends HTMLElement {
+  connectedCallback(): void {
+    const name = (this.getAttribute('icon') ?? '?').split(':')[1] ?? '?';
+    this.innerHTML = `<svg viewBox="0 0 32 32" width="32" height="32"><circle cx="16" cy="16" r="12"
+      fill="none" stroke="currentColor" stroke-width="1.5"/><text x="16" y="21" text-anchor="middle"
+      font-size="13" fill="currentColor">${name[0].toUpperCase()}</text></svg>`;
+  }
+}
+if (!customElements.get('ha-icon')) customElements.define('ha-icon', FakeHaIcon);
+
 function byId<T extends HTMLElement>(id: string): T {
   const el = document.getElementById(id);
   if (!el) throw new Error(`#${id} not found`);
@@ -31,6 +42,7 @@ const widthSelect = byId<HTMLSelectElement>('width');
 const signToggle = byId<HTMLInputElement>('sign');
 const liveContainer = byId<HTMLElement>('live');
 const demoContainer = byId<HTMLElement>('cards');
+const compareContainer = byId<HTMLElement>('compare');
 
 const TYPE = 'custom:deye-cloud-power-flow-card';
 const locale = { language: 'en', number_format: 'comma_decimal', time_format: '24' };
@@ -127,8 +139,18 @@ function render(): void {
   document.body.style.setProperty('--card-width', `${widthSelect.value}px`);
 
   liveCards.length = 0;
-  const live = makeCard({ title: 'Home', preset: 'solarman', prefix: 'inverter' }, hass);
+  const live = makeCard({ preset: 'solarman', prefix: 'inverter' }, hass);
   if (live instanceof HTMLElement && live.tagName !== 'DIV') liveCards.push(live as DeyeCloudPowerFlowCard);
+  const partial = makeCard(
+    {
+      pv: { pv1_power: 'sensor.inverter_pv1_power' },
+      grid: { power: 'sensor.inverter_external_power', status: 'binary_sensor.inverter_grid' },
+      battery: { power: 'sensor.inverter_battery_power' },
+      ups: { power: 'sensor.inverter_load_power' },
+    },
+    hass,
+  );
+  if (partial.tagName !== 'DIV') liveCards.push(partial as DeyeCloudPowerFlowCard);
   liveContainer.replaceChildren(
     figure(
       'preset: solarman, updates every 2 s',
@@ -136,12 +158,33 @@ function render(): void {
       button('toggle grid', () => (sim.offGrid = !sim.offGrid)),
       button('toggle offline', () => (sim.offline = !sim.offline)),
     ),
-    figure('Invalid config: battery.soc missing', makeCard({ preset: 'solarman', battery: { soc: null } }, hass)),
+    figure(
+      'mdi icon overrides, hidden load',
+      makeCard(
+        {
+          demo: 'day_charge',
+          pv: { icon: 'mdi:solar-power', name: 'Roof' },
+          battery: { icon: 'mdi:battery-high' },
+          load: { hidden: true },
+        },
+        { states: {}, locale },
+      ),
+    ),
+    figure(
+      'Partial config: PV from pv1 only, no SOC, no load',
+      partial,
+    ),
+    figure('Invalid config: no entities', makeCard({}, hass)),
   );
+
+  compareContainer.querySelector('figure.card')?.remove();
+  const compare = figure('Card', makeCard({ demo: 'day_charge', theme: 'deye' }, { states: {}, locale }));
+  compare.classList.add('card');
+  compareContainer.append(compare);
 
   demoContainer.replaceChildren(
     ...Object.entries(DEMO_SCENARIOS).map(([id, scenario]) =>
-      figure(`${scenario.label} — demo: ${id}`, makeCard({ title: 'Home', demo: id }, { states: {}, locale })),
+      figure(`${scenario.label} — demo: ${id}`, makeCard({ demo: id }, { states: {}, locale })),
     ),
   );
 }

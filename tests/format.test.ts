@@ -1,25 +1,25 @@
 import { describe, expect, it } from 'vitest';
-import { DASH, formatEnergy, formatPercent, formatPower, formatTime } from '../src/format';
+import { DASH, formatDateTime, formatEnergy, formatPercent, formatPower, formatTime } from '../src/format';
 
 const en = { language: 'en', number_format: 'comma_decimal' };
 const de = { language: 'de', number_format: 'decimal_comma' };
 
 describe('formatPower', () => {
-  it('shows whole watts below 1000 W', () => {
-    expect(formatPower(948, en)).toEqual({ value: '948', unit: 'W' });
-    expect(formatPower(19.4, en)).toEqual({ value: '19', unit: 'W' });
+  it('shows watts with two decimals below 1000 W', () => {
+    expect(formatPower(948, en)).toEqual({ value: '948.00', unit: 'W' });
+    expect(formatPower(19.456, en)).toEqual({ value: '19.46', unit: 'W' });
   });
 
   it('switches to kW with two decimals from 1000 W', () => {
     expect(formatPower(1250, en)).toEqual({ value: '1.25', unit: 'kW' });
-    expect(formatPower(999.6, en)).toEqual({ value: '1.00', unit: 'kW' });
+    expect(formatPower(999.996, en)).toEqual({ value: '1.00', unit: 'kW' });
     expect(formatPower(12345, de)).toEqual({ value: '12,35', unit: 'kW' });
   });
 
-  it('hides the sign unless asked', () => {
-    expect(formatPower(-389, en)).toEqual({ value: '389', unit: 'W' });
-    expect(formatPower(-389, en, true)).toEqual({ value: '-389', unit: 'W' });
-    expect(formatPower(-0.2, en, true)).toEqual({ value: '0', unit: 'W' });
+  it('shows the sign like the app unless disabled', () => {
+    expect(formatPower(-389, en)).toEqual({ value: '-389.00', unit: 'W' });
+    expect(formatPower(-389, en, false)).toEqual({ value: '389.00', unit: 'W' });
+    expect(formatPower(-0.001, en)).toEqual({ value: '0.00', unit: 'W' });
   });
 
   it('shows a dash for missing values', () => {
@@ -50,5 +50,10 @@ describe('formatTime', () => {
     const date = new Date(2026, 10, 19, 12, 10);
     expect(formatTime(date, { language: 'en', time_format: '24' })).toBe('12:10');
     expect(formatTime(null)).toBe(DASH);
+  });
+
+  it('formats date and time with seconds', () => {
+    const date = new Date(2026, 10, 19, 11, 29, 2);
+    expect(formatDateTime(date)).toBe('2026-11-19 11:29:02');
   });
 });
