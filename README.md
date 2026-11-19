@@ -104,6 +104,135 @@ UPS-Load has no panel, as in the app.
 | `<node>.invert` | `false` | Flip the sign of the node's power |
 | `demo` | — | Built-in sample data instead of entities: `day_charge`, `night_discharge`, `export`, `off_grid`, `low_battery`, `offline` |
 
+### Entities
+
+Every key takes an entity id. The last column is what `preset: solarman` fills in (`<prefix>` = `inverter` by default).
+
+| Key | Meaning | Shown in | `preset: solarman` |
+| --- | --- | --- | --- |
+| `pv.power` | Total PV power, W (computed from `pv1_power` + `pv2_power` if unset) | Production node | `sensor.<prefix>_pv_power` |
+| `pv.pv1_power`, `pv.pv2_power` | String power, W (computed from voltage × current if unset) | Production panel | `sensor.<prefix>_pv1_power`, `_pv2_power` |
+| `pv.pv1_voltage`, `pv.pv2_voltage` | String voltage, V | Production panel | `sensor.<prefix>_pv1_voltage`, `_pv2_voltage` |
+| `pv.pv1_current`, `pv.pv2_current` | String current, A | Production panel | `sensor.<prefix>_pv1_current`, `_pv2_current` |
+| `pv.energy_today` | PV energy today, kWh | Header: Production Today | `sensor.<prefix>_today_production` |
+| `pv.energy_total` | PV energy total | not shown yet | `sensor.<prefix>_total_production` |
+| `grid.power` | Grid power at the CT, W, + import / − export | Grid node | `sensor.<prefix>_external_power` |
+| `grid.inner_power` | Inverter grid port power, W, + import | Load calculation | `sensor.<prefix>_grid_power` |
+| `grid.status` | Grid connected (`binary_sensor` or `sensor`) | "On grid" / "Off grid", Grid panel | `binary_sensor.<prefix>_grid` |
+| `grid.voltage` | Grid voltage, V (status fallback, see `no_grid_voltage`) | Grid panel | `sensor.<prefix>_grid_l1_voltage` |
+| `grid.frequency` | Grid frequency, Hz | Grid panel | `sensor.<prefix>_grid_frequency` |
+| `grid.import_today`, `grid.export_today` | Energy imported / exported today | Grid panel | `sensor.<prefix>_today_energy_import`, `_today_energy_export` |
+| `grid.import_total`, `grid.export_total` | Energy imported / exported total | Grid panel | `sensor.<prefix>_total_energy_import`, `_total_energy_export` |
+| `inverter.power` | Inverter AC output, W | Inverter panel, Production panel (Grid Tie Power) | `sensor.<prefix>_power` |
+| `inverter.voltage` | Inverter output voltage, V | Inverter panel | `sensor.<prefix>_output_l1_voltage` |
+| `inverter.frequency` | Inverter output frequency, Hz | Inverter panel | `sensor.<prefix>_output_frequency` |
+| `inverter.temperature`, `inverter.status` | Inverter temperature / state | not shown yet | `sensor.<prefix>_temperature`, `_device_state` |
+| `battery.power` | Battery power, W, + discharge / − charge (computed from voltage × current if unset) | Battery node | `sensor.<prefix>_battery_power` |
+| `battery.soc` | State of charge, % | Battery node | `sensor.<prefix>_battery` |
+| `battery.voltage` | Battery voltage, V | Battery panel | `sensor.<prefix>_battery_voltage` |
+| `battery.current` | Battery current, A, same sign as power | Battery panel | `sensor.<prefix>_battery_current` |
+| `battery.temperature` | Battery temperature | Battery panel | `sensor.<prefix>_battery_temperature` |
+| `battery.status` | Charging / idle / discharging (computed from power if unset) | Battery panel | `sensor.<prefix>_battery_state` |
+| `battery.charge_today`, `battery.discharge_today` | Battery energy today | not shown yet | `sensor.<prefix>_today_battery_charge`, `_today_battery_discharge` |
+| `ups.power` | UPS / Backup output, W (Deye "Load" port) | UPS-Load node | `sensor.<prefix>_load_power` |
+| `ups.voltage` | UPS output voltage, V | Load panel (Load Voltage L1) | `sensor.<prefix>_load_l1_voltage` |
+| `ups.energy_today` | UPS energy today | not shown yet | — |
+| `load.power` | Grid-side load, W (computed from `grid.power` − `grid.inner_power` if unset) | Load node, Load panel | — |
+| `load.total_power` | All loads, W (computed from UPS + grid-side load if unset) | Load panel (Load Power L1) | — |
+| `load.energy_today`, `load.energy_total` | Load energy today / total | Load panel | `sensor.<prefix>_today_load_consumption`, `_total_load_consumption` |
+
+### Full example
+
+All options in one place; leave out whatever you don't need.
+
+```yaml
+type: custom:deye-cloud-power-flow-card
+title: Home                # optional header line
+theme: deye                # deye | ha (default)
+preset: solarman           # solarman | none (default)
+prefix: inverter           # ha-solarman device name
+min_flow_w: 50
+stale_after_s: 300
+show_sign: true
+# demo: day_charge
+
+pv:
+  power: sensor.inverter_pv_power
+  pv1_power: sensor.inverter_pv1_power
+  pv1_voltage: sensor.inverter_pv1_voltage
+  pv1_current: sensor.inverter_pv1_current
+  pv2_power: sensor.inverter_pv2_power
+  pv2_voltage: sensor.inverter_pv2_voltage
+  pv2_current: sensor.inverter_pv2_current
+  energy_today: sensor.inverter_today_production
+  energy_total: sensor.inverter_total_production
+  name: Production
+  icon: mdi:solar-power
+  hidden: false
+  invert: false
+
+grid:
+  power: sensor.inverter_external_power
+  inner_power: sensor.inverter_grid_power
+  status: binary_sensor.inverter_grid
+  voltage: sensor.inverter_grid_l1_voltage
+  frequency: sensor.inverter_grid_frequency
+  import_today: sensor.inverter_today_energy_import
+  export_today: sensor.inverter_today_energy_export
+  import_total: sensor.inverter_total_energy_import
+  export_total: sensor.inverter_total_energy_export
+  no_grid_voltage: 100
+  name: Grid
+  icon: mdi:transmission-tower
+  hidden: false
+  invert: false
+
+inverter:
+  power: sensor.inverter_power
+  voltage: sensor.inverter_output_l1_voltage
+  frequency: sensor.inverter_output_frequency
+  temperature: sensor.inverter_temperature
+  status: sensor.inverter_device_state
+  name: Inverter           # used for the panel title and screen readers
+  icon: mdi:solar-power-variant
+  invert: false            # the inverter cannot be hidden
+
+battery:
+  power: sensor.inverter_battery_power
+  soc: sensor.inverter_battery
+  voltage: sensor.inverter_battery_voltage
+  current: sensor.inverter_battery_current
+  temperature: sensor.inverter_battery_temperature
+  status: sensor.inverter_battery_state
+  charge_today: sensor.inverter_today_battery_charge
+  discharge_today: sensor.inverter_today_battery_discharge
+  soc_warning: 50
+  soc_critical: 20
+  name: Battery
+  icon: mdi:battery-high   # with a custom icon the SOC and fill inside the node are not drawn
+  hidden: false
+  invert: false            # also flips battery.current
+
+ups:
+  power: sensor.inverter_load_power
+  voltage: sensor.inverter_load_l1_voltage
+  energy_today: sensor.ups_energy_today
+  name: UPS-Load
+  icon: mdi:power-plug-battery
+  hidden: false
+  invert: false
+
+load:
+  power: sensor.grid_side_load_power
+  total_power: sensor.total_load_power
+  energy_today: sensor.inverter_today_load_consumption
+  energy_total: sensor.inverter_total_load_consumption
+  name: Load
+  icon: mdi:home-lightning-bolt
+  hidden: false
+  invert: false
+```
+
 ## Development
 
 ```bash
