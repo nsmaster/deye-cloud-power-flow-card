@@ -36,6 +36,12 @@ export const NODE_POS: Record<NodeId, Point> = {
 export const VALUE_GAP = 21;
 export const CAPTION_GAP = 35;
 
+/** Every line ends this far from the inverter's outer edge, on all four sides. */
+export const INVERTER_GAP = 3;
+const INV_LEFT = NODE_POS.inverter.x - INVERTER_SIZE / 2 - INVERTER_GAP;
+const INV_RIGHT = NODE_POS.inverter.x + INVERTER_SIZE / 2 + INVERTER_GAP;
+const INV_BOTTOM = NODE_POS.inverter.y + INVERTER_SIZE / 2 + INVERTER_GAP;
+
 /**
  * Orthogonal polylines, always listed from the outer node to the inverter.
  * They stop short of the nodes, as in the app; the arrow tip sits on the end point.
@@ -45,29 +51,29 @@ export const LINE_POINTS: Record<LineId, readonly Point[]> = {
     { x: 115, y: 61 },
     { x: 135, y: 61 },
     { x: 135, y: 178.5 },
-    { x: 168.5, y: 178.5 },
+    { x: INV_LEFT, y: 178.5 },
   ],
   grid: [
     { x: 278.5, y: 61 },
     { x: 258.5, y: 61 },
     { x: 258.5, y: 178.5 },
-    { x: 229.5, y: 178.5 },
+    { x: INV_RIGHT, y: 178.5 },
   ],
   battery: [
     { x: 111.5, y: 307.5 },
     { x: 135, y: 307.5 },
     { x: 135, y: 190.5 },
-    { x: 164.5, y: 190.5 },
+    { x: INV_LEFT, y: 190.5 },
   ],
   ups: [
     { x: 196.5, y: 279.5 },
-    { x: 196.5, y: 222.5 },
+    { x: 196.5, y: INV_BOTTOM },
   ],
   load: [
     { x: 281.5, y: 307.5 },
     { x: 258.5, y: 307.5 },
     { x: 258.5, y: 190.5 },
-    { x: 229.5, y: 190.5 },
+    { x: INV_RIGHT, y: 190.5 },
   ],
 };
 
