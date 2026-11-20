@@ -93,7 +93,7 @@ UPS-Load has no panel, as in the app.
 | `title` | — | Station name in the header |
 | `theme` | `ha` | `ha` follows the HA theme, `deye` forces the Deye Cloud dark palette |
 | `preset` / `prefix` | `none` / `inverter` | Entity preset and device name |
-| `min_flow_w` | `50` | Lines at or below this power stay idle (no arrow, no dot) |
+| `min_flow_w` | `50` | Lines below this power stay idle (no arrow, no dot); 0 W is always idle |
 | `stale_after_s` | `300` | Header time turns orange when data is older than this |
 | `show_sign` | `true` | Show the sign of power, as the app does (`-389.00 W`) |
 | `grid.no_grid_voltage` | `100` | Off grid below this voltage when `grid.status` is not set |

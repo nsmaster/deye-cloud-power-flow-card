@@ -279,7 +279,7 @@ export class DeyeCloudPowerFlowCard extends LitElement {
               value: pv,
               caption: o.names.pv,
               ...interactive('pv'),
-              dim: data.pv === null || data.pv <= min,
+              dim: data.pv === null || data.pv <= 0 || data.pv < min,
               ariaLabel: `${o.names.pv}: ${valueLabel(pv)}`,
             })
           : nothing}

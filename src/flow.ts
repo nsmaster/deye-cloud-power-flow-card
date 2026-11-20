@@ -12,7 +12,7 @@ export type LineKind = 'source' | 'sink' | 'bidirectional';
 export const FLOW_CYCLE_S = 3;
 
 export function flowDirection(powerW: number | null, kind: LineKind, minFlowW: number, enabled = true): FlowDirection {
-  if (!enabled || powerW === null || !Number.isFinite(powerW) || Math.abs(powerW) <= minFlowW) return 'none';
+  if (!enabled || powerW === null || !Number.isFinite(powerW) || powerW === 0 || Math.abs(powerW) < minFlowW) return 'none';
   switch (kind) {
     case 'source':
       return powerW > 0 ? 'in' : 'none';

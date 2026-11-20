@@ -2,11 +2,19 @@ import { describe, expect, it } from 'vitest';
 import { flowDirection } from '../src/flow';
 
 describe('flowDirection', () => {
-  it('stays idle at or below the threshold', () => {
-    expect(flowDirection(50, 'bidirectional', 50)).toBe('none');
-    expect(flowDirection(-50, 'bidirectional', 50)).toBe('none');
+  it('stays idle below the threshold', () => {
+    expect(flowDirection(49, 'bidirectional', 50)).toBe('none');
+    expect(flowDirection(-49, 'bidirectional', 50)).toBe('none');
     expect(flowDirection(19, 'bidirectional', 50)).toBe('none'); // grid in the recording
     expect(flowDirection(0, 'source', 50)).toBe('none');
+  });
+
+  it('flows from the threshold up; 0 W is always idle', () => {
+    expect(flowDirection(50, 'bidirectional', 50)).toBe('in');
+    expect(flowDirection(-50, 'bidirectional', 50)).toBe('out');
+    expect(flowDirection(1, 'source', 1)).toBe('in');
+    expect(flowDirection(0, 'source', 0)).toBe('none');
+    expect(flowDirection(0.5, 'source', 0)).toBe('in');
   });
 
   it('treats unavailable values as idle', () => {
