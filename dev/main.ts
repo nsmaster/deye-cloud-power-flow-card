@@ -24,7 +24,7 @@ if (!customElements.get('ha-card')) customElements.define('ha-card', FakeHaCard)
 class FakeHaIcon extends HTMLElement {
   connectedCallback(): void {
     const name = (this.getAttribute('icon') ?? '?').split(':')[1] ?? '?';
-    this.innerHTML = `<svg viewBox="0 0 32 32" width="32" height="32"><circle cx="16" cy="16" r="12"
+    this.innerHTML = `<svg viewBox="0 0 32 32" style="width: var(--mdc-icon-size, 24px); height: var(--mdc-icon-size, 24px); display: block"><circle cx="16" cy="16" r="12"
       fill="none" stroke="currentColor" stroke-width="1.5"/><text x="16" y="21" text-anchor="middle"
       font-size="13" fill="currentColor">${name[0].toUpperCase()}</text></svg>`;
   }

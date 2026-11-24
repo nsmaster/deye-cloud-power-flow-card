@@ -157,7 +157,8 @@ export const cardStyles = css`
   /* Battery: SOC text and fill inside the node */
   .soc {
     font-family: ${NUMBER_FONT};
-    font-size: 13px;
+    font-size: 16px;
+    letter-spacing: 0.5px;
     font-weight: 700;
     fill: var(--dcf-soc);
   }
